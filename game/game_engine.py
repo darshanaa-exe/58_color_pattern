@@ -2,6 +2,16 @@ import random
 import pygame
 from game.color_button import ColorButton
 
+# Playback timing (milliseconds)
+BASE_FLASH_DURATION = 450
+BASE_PAUSE_DURATION = 200
+MIN_FLASH_DURATION = 150
+MIN_PAUSE_DURATION = 80
+
+# How much faster playback gets for each successful round
+FLASH_SPEEDUP_PER_ROUND = 25
+PAUSE_SPEEDUP_PER_ROUND = 10
+
 
 class GameEngine:
     def __init__(self, width, height):
@@ -27,8 +37,8 @@ class GameEngine:
         self.state = "WATCH"
         self.showing_step = 0
         self.step_start_time = 0
-        self.flash_duration = 450
-        self.pause_duration = 200
+        self.flash_duration = BASE_FLASH_DURATION
+        self.pause_duration = BASE_PAUSE_DURATION
         self.is_flashing = False
 
         self.player_lit_button = None
@@ -40,11 +50,24 @@ class GameEngine:
 
         self.start_next_round()
 
+    def update_playback_speed(self):
+        """Shorten flash and pause durations as the score grows, down to a floor."""
+        self.flash_duration = max(
+            MIN_FLASH_DURATION,
+            BASE_FLASH_DURATION - self.score * FLASH_SPEEDUP_PER_ROUND,
+        )
+        self.pause_duration = max(
+            MIN_PAUSE_DURATION,
+            BASE_PAUSE_DURATION - self.score * PAUSE_SPEEDUP_PER_ROUND,
+        )
+
     def start_next_round(self):
         new_color = random.randint(0, 3)
 
         # Append exactly one new step to the existing sequence
         self.sequence.append(new_color)
+
+        self.update_playback_speed()
 
         self.player_input.clear()
         self.state = "WATCH"
